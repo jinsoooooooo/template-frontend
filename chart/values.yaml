@@ -1,0 +1,8 @@
+image:
+  repository: ghcr.io/<GITHUB_OWNER>/frontend
+  tag: "dev"
+  pullPolicy: IfNotPresent
+
+service:
+  port: 80
+  targetPort: 80
