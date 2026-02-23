@@ -1,12 +1,203 @@
-<!doctype html>
-<html>
-  <head><meta charset="utf-8"><title>Front</title></head>
-  <body>
-    <h1>Hello Front (home k8s)</h1>
-    <p id="api"></p>
-    <script>
-      // 나중에 도메인 생기면 api URL로 바꾸면 됨
-      document.getElementById("api").innerText = "API: (set later)";
-    </script>
-  </body>
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Template</title>
+  <!-- 고품질 폰트 적용 (Inter) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      /* 배경 요소 (Glow 효과) */
+      background-image: radial-gradient(circle at 15% 50%, rgba(56, 189, 248, 0.15), transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15), transparent 25%);
+    }
+
+    .container {
+      /* Glassmorphism 카드 (반투명 유리 효과) */
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      text-align: center;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 1.8rem;
+      font-weight: 600;
+    }
+
+    p {
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 30px;
+    }
+
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px -1px rgba(56, 189, 248, 0.3);
+    }
+
+    .btn:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(56, 189, 248, 0.4);
+    }
+
+    /* API 응답 결과를 표시할 영역 */
+    .response-box {
+      margin-top: 24px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: left;
+      font-family: monospace;
+      color: #a7f3d0;
+      min-height: 60px;
+      display: none;
+      /* 데이터 통신 전에는 숨김 */
+      overflow-x: auto;
+    }
+
+    .loading {
+      color: var(--accent);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>Welcome Template</h1>
+    <p>이 페이지는 기본 프론트엔드 UI 템플릿 샘플입니다. 아래 버튼을 클릭하여 백엔드 서버에서 데이터를 가져오세요.</p>
+
+    <!-- 호출되는 백엔드 주소 정보 추가 -->
+    <div
+      style="margin-bottom: 20px; font-size: 0.9rem; color: #a7f3d0; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+      <strong>호출 대상 API 주소:</strong><br>
+      <span style="font-family: monospace; color: #38bdf8;">http://api-fastapi.apps.svc.cluster.local/api/hello</span>
+    </div>
+
+    <button class="btn" id="fetchBtn" onclick="fetchHelloAPI()">
+      Call Backend API
+    </button>
+
+    <!-- API 응답 렌더링 영역 -->
+    <div class="response-box" id="responseBox"></div>
+  </div>
+
+  <!-- API 호출 로직 -->
+  <script>
+    /**
+     * 백엔드 API (Core DNS 주소) 호출 함수
+     */
+    async function fetchHelloAPI() {
+      const btn = document.getElementById('fetchBtn');
+      const box = document.getElementById('responseBox');
+
+      // 실제 호출 대상 URL
+      const targetUrl = 'http://api-fastapi.apps.svc.cluster.local/api/hello';
+
+      // 1. 요청 시작 전 UI 상태(로딩) 업데이트
+      box.style.display = 'block';
+      box.innerHTML = '<span class="loading">요청 중...</span>';
+      btn.disabled = true;
+
+      try {
+        // 2. 백엔드 API 호출 (Cluster 내부 고유 도메인 주소 사용)
+        const response = await fetch(targetUrl);
+
+        if (!response.ok) {
+          // 상태 코드가 정상이 아닐 경우 예외 던지기
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // 3. JSON 응답 결과 가져오기
+        const data = await response.json();
+
+        // 4. 화면에 응답 포맷팅하여 렌더링 (호출 대상 정보 포함)
+        box.innerHTML = `
+          <div style="margin-bottom:10px;font-size:0.8rem;color:#cbd5e1;">[Success] ${targetUrl}</div>
+          <pre style="margin:0">${JSON.stringify(data, null, 2)}</pre>
+        `;
+        box.style.color = '#a7f3d0'; // 연녹색(성공) 적용
+      } catch (error) {
+        // 실패 시 에러 내용 렌더링 (CORS 등의 에러 발생 가능성 안내 포함)
+        box.innerHTML = `
+          <div style="margin-bottom:10px;font-size:0.8rem;color:#fca5a5;">[Failed] ${targetUrl}</div>
+          요청 실패: ${error.message}<br><br>
+          <span style="font-size:0.8rem;color:#94a3b8;">
+            * 프론트엔드 브라우저(클라이언트)에서 직접 호출하는 경우,<br>
+            Cluster IP(.svc.cluster.local)는 내부망 주소이므로 접근이 불가능하여 에러가 발생합니다.
+          </span>
+        `;
+        box.style.color = '#fca5a5'; // 붉은색(실패) 적용
+      } finally {
+        // 최종적으로 버튼 다시 활성화
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+
 </html>
