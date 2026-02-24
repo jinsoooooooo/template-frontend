@@ -1,21 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend
+  name: template-frontend
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: frontend
+      app: template-frontend
   template:
     metadata:
       labels:
-        app: frontend
+        app: template-frontend
     spec:
       containers:
-        - name: frontend
+        - name: template-frontend
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - name: config-volume
+              mountPath: /usr/share/nginx/html/config.js
+              subPath: config.js
+              readOnly: true
           ports:
             - containerPort: 80
           readinessProbe:
@@ -24,3 +29,7 @@ spec:
               port: 80
             initialDelaySeconds: 3
             periodSeconds: 10
+      volumes:
+        - name: config-volume
+          configMap:
+            name: template-frontend-config

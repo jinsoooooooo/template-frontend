@@ -8,3 +8,7 @@ image:
 service:
   port: 80
   targetPort: 80
+
+
+# 클러스터(환경)별로 이 값을 덮어씌워(Override) 사용합니다.
+apiBaseUrl: "http://template-api.apps.svc.cluster.local/api/"
